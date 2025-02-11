@@ -3,9 +3,9 @@
 
 #include <string>
 
-void bitStackEncode(const std::string& inputFile, const std::string& outputFile, int bitDepth);
+void bitStackEncode(const std::string& inputFile, int bitDepth);
 
-void bitStackDecode(const std::string& inputFile, const std::string& outputFile);
+void bitStackDecode(const std::string& inputFile);
 
 
 #endif // !BITSTACK_H

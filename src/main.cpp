@@ -1,26 +1,75 @@
-#include "bitstack/bitstack.h"
-
 #include <iostream>
-#include <fstream>
-#include <bitset>
+#include <filesystem>
+#include <string>
+#include "bitstack/bitstack.h" 
 
-
+namespace fs = std::filesystem;
 using namespace std;
 
+void printUsage() {
+    cout << "Usage:\n";
+    cout << "  Encode a file: bs -e <input_file> <bit_depth>\n";
+    cout << "  Decode a file: bs -d <input_file>\n";
+    cout << "  Encode a folder: bs -E <folder> <bit_depth>\n";
+    cout << "  Decode a folder: bs -D <folder>\n";
+}
 
-int main(){
+bool isValidFile(const fs::path& path) {
+    return fs::is_regular_file(path);  
+}
 
-	string fileName = "BlackMarble_2016_928m_conus.tif";
+void encodeFolder(const string& folderPath, int bitDepth) {
+    for (const auto& entry : fs::directory_iterator(folderPath)) {
+        if (isValidFile(entry.path())) {
+            string inputFile = entry.path().string();
+            cout << "Encoding: " << inputFile << endl;
+            bitStackEncode(inputFile, bitDepth);
+        }
+    }
+}
 
-	string inputFilePath = "C:\\Users\\User\\Desktop\\testImages\\tifs\\" + fileName;
+void decodeFolder(const string& folderPath) {
+    for (const auto& entry : fs::directory_iterator(folderPath)) {
+        if (isValidFile(entry.path()) && entry.path().extension() == ".bstack") {
+            string inputFile = entry.path().string();
+            cout << "Decoding: " << inputFile << endl;
+            bitStackDecode(inputFile);
+        }
+    }
+}
 
+int main(int argc, char* argv[]) {
+    if (argc < 3) {
+        cerr << "Error: Invalid arguments.\n";
+        printUsage();
+        return 1;
+    }
 
-	string outputImagePath = "C:/Users/User/Desktop/testImages/" + fileName +".bstack";
+    string mode = argv[1];
 
-	bitStackEncode(inputFilePath, "C:/Users/User/Desktop/testImages/" + fileName + ".bstack", 8);
-
-
-	bitStackDecode(outputImagePath, "C:/Users/User/Desktop/testImages/" + fileName + "_decoded.tif");
+    if (mode == "-e" && argc == 4) {  
+        string inputFile = argv[2];
+        int bitDepth = stoi(argv[3]);
+        bitStackEncode(inputFile, bitDepth);
+    } 
+    else if (mode == "-d" && argc == 3) {  
+        string inputFile = argv[2];
+        bitStackDecode(inputFile);
+    } 
+    else if (mode == "-E" && argc == 4) {  
+        string folderPath = argv[2];
+        int bitDepth = stoi(argv[3]);
+        encodeFolder(folderPath, bitDepth);
+    } 
+    else if (mode == "-D" && argc == 3) {  
+        string folderPath = argv[2];
+        decodeFolder(folderPath);
+    } 
+    else {
+        cerr << "Error: Invalid command.\n";
+        printUsage();
+        return 1;
+    }
 
     return 0;
 }

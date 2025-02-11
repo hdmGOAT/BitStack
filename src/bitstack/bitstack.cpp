@@ -3,13 +3,15 @@
 #include <vector>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 
 using namespace std;
 
 struct BStackHeader {
     char signature[8] = "BSTACK\0";  
     uint64_t originalSize;           
-    uint8_t bitDepth;           
+    uint8_t bitDepth;   
+    char extension[16] = {0} ;       
 };
 
 /*
@@ -24,7 +26,7 @@ struct BStackHeader {
 */
 
 
-void bitStackEncode(const string& inputFile, const string& outputFile, int bitDepth) {
+void bitStackEncode(const string& inputFile,  int bitDepth) {
     ifstream input(inputFile, ios::binary | ios::ate);
     if (!input) {
         cerr << "Error: Cannot open input file: " << inputFile << endl;
@@ -38,7 +40,10 @@ void bitStackEncode(const string& inputFile, const string& outputFile, int bitDe
     input.read(reinterpret_cast<char*>(rawData.data()), fileSize);
     input.close();
 
-   
+    string fileBase = filesystem::path(inputFile).stem().string();  
+    string fileExt = filesystem::path(inputFile).extension().string();
+
+    string outputFile = fileBase + ".bstack";
     ofstream output(outputFile, ios::binary);
     if (!output) {
         cerr << "Error: Cannot open output file: " << outputFile << endl;
@@ -46,6 +51,7 @@ void bitStackEncode(const string& inputFile, const string& outputFile, int bitDe
     }
 
     BStackHeader header = { "BSTACK\0", fileSize, static_cast<uint8_t>(bitDepth) };
+    strncpy(header.extension, fileExt.c_str(), sizeof(header.extension) - 1); 
     output.write(reinterpret_cast<char*>(&header), sizeof(header));
 
 
@@ -93,7 +99,7 @@ void bitStackEncode(const string& inputFile, const string& outputFile, int bitDe
     cout << "Encoded binary file " << inputFile << " into " << outputFile << " successfully!" << endl;
 }
 
-void bitStackDecode(const string& inputFile, const string& outputFile) {
+void bitStackDecode(const string& inputFile) {
     ifstream input(inputFile, ios::binary);
     if (!input) {
         cerr << "Error: Cannot open input file: " << inputFile << endl;
@@ -135,12 +141,8 @@ void bitStackDecode(const string& inputFile, const string& outputFile) {
         reconstructedData[i] = byte;
     }
 
-
-    cout << "First 16 bytes of decoded file: ";
-    for (size_t i = 0; i < 16; i++) {
-        printf("%02X ", reconstructedData[i]);
-    }
-    cout << endl;
+    string outputFile = filesystem::path(inputFile).stem().string(); 
+    outputFile += header.extension;
 
     ofstream output(outputFile, ios::binary);
     if (!output) {
