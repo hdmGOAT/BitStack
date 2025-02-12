@@ -131,12 +131,14 @@ void bitStackDecode(const string& inputFile) {
 
     vector<uint8_t> reconstructedData(fileSize, 0);
 
+    // LOGIC IS BROKEN FOR BITS OTHER THAN 8, FIX THIS  
+
     for (size_t i = 0; i < fileSize; i++) {
         uint8_t byte = 0;
 
         for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
-           size_t index = i / bitDepth;  // Correct bit layer indexing
-            size_t bitIndex = i % bitDepth;  // Find bit position inside a byte
+           size_t index = i / bitDepth;  
+            size_t bitIndex = i % bitDepth;  
 
             if (index < bitLayers[bitPos].size()) {
                 uint8_t bitValue = (bitLayers[bitPos][index] >> (7 - bitIndex)) & 1;
