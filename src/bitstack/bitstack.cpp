@@ -65,11 +65,14 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
 
     for (size_t i = 0; i < fileSize; i += (bitDepth / 8)) {  
+        cout << "Encoding " << i << " of " << fileSize << " bytes" << endl;
+
         uint32_t value = 0;
 
         for (int b = 0; b < bitDepth / 8; b++) {
             if (i + b < fileSize)
                 value |= rawData[i + b] << (8 * b);
+                cout << "Value: " << value << endl;
         }
 
         /*FOR HANS TO REMEMBER:
@@ -83,12 +86,26 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 				Last Layer: Final Bit of each byte, MSB
                     
         */
+      
+        for (size_t i = 0; i < fileSize; i++) {
+            uint8_t byte = rawData[i];
 
-        for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
-            size_t index = i / bitDepth;  
-            uint8_t bitValue = (value >> bitPos) & 1;
-			bitLayers[bitPos][index] |= (bitValue << (7 - (i % 8))); // This looks confusing, but it's just setting the bit at the correct position, for example if 1 was extracted, it would just be translated to something like 1000000 depending on which bit it is so it could also be 00100000 or others this is so when OR is used, it turns 0s into 1s and keeps 0s as 0s
+            for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
+                cout << "BitPos: " << bitPos << endl;
+                size_t layerIndex = i / bitDepth; 
+                uint8_t bitValue = (byte >> (7 - (bitPos % 8))) & 1;
+
+
+                if (layerIndex >= bitLayers[bitPos].size()) {
+                    std::cerr << "Error: Index out of range for bitLayers[" << bitPos << "][" << layerIndex << "]\n";
+                    continue;
+                }
+
+                bitLayers[bitPos][layerIndex] |= (bitValue << (7 - (i % 8)));
+             
+            }
         }
+
     }
 
     for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
