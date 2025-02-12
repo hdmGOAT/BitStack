@@ -8,10 +8,10 @@ using namespace std;
 
 void printUsage() {
     cout << "Usage:\n";
-    cout << "  Encode a file: bs -e <input_file> <bit_depth>\n";
-    cout << "  Decode a file: bs -d <input_file>\n";
-    cout << "  Encode a folder: bs -E <folder> <bit_depth>\n";
-    cout << "  Decode a folder: bs -D <folder>\n";
+    cout << "  Encode a file: btsk -e <input_file> <bit_depth>\n";
+    cout << "  Decode a file: btsk -d <input_file>\n";
+    cout << "  Encode a folder: btsk -E <folder> <bit_depth>\n";
+    cout << "  Decode a folder: btsk -D <folder>\n";
 }
 
 bool isValidFile(const fs::path& path) {
@@ -39,8 +39,8 @@ void decodeFolder(const string& folderPath) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        cerr << "Error: Invalid arguments.\n";
+	std::cout << "BitStack CLI Running!" << std::endl;
+    if (argc < 2 || string(argv[1]) == "-?") {
         printUsage();
         return 1;
     }
