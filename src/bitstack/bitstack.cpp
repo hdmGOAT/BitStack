@@ -65,33 +65,20 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
 
     for (size_t i = 0; i < fileSize; i += (bitDepth / 8)) {  
-        cout << "Encoding " << i << " of " << fileSize << " bytes" << endl;
+
 
         uint32_t value = 0;
 
         for (int b = 0; b < bitDepth / 8; b++) {
             if (i + b < fileSize)
                 value |= rawData[i + b] << (8 * b);
-                cout << "Value: " << value << endl;
         }
 
-        /*FOR HANS TO REMEMBER:
-                
-				MSB is the first bit  aka i % 8 = 0, this means its shift is 7, and is placed at left most bit
-				LSB is the last bit  aka i % 8 = 7, this means its shift is 0, and stays at right most bit
-
-                FOR LAYERS:
-
-				Layer 1: 1st bit of each byte, LSB
-				Last Layer: Final Bit of each byte, MSB
-                    
-        */
-      
         for (size_t i = 0; i < fileSize; i++) {
             uint8_t byte = rawData[i];
 
             for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
-                cout << "BitPos: " << bitPos << endl;
+
                 size_t layerIndex = i / bitDepth; 
                 uint8_t bitValue = (byte >> (7 - (bitPos % 8))) & 1;
 
@@ -125,7 +112,6 @@ void bitStackDecode(const string& inputFile) {
 
     BStackHeader header;
     input.read(reinterpret_cast<char*>(&header), sizeof(header));
-
     if (memcmp(header.signature, "BSTACK\0", 7) != 0) {
         cerr << "Error: Invalid BSTACK file format!" << endl;
         return;
@@ -133,10 +119,9 @@ void bitStackDecode(const string& inputFile) {
 
     size_t fileSize = header.originalSize;
     int bitDepth = header.bitDepth;
-
     size_t layerSize = (fileSize + (bitDepth - 1)) / bitDepth;
-    vector<vector<uint8_t>> bitLayers(bitDepth, vector<uint8_t>(layerSize));
 
+    vector<vector<uint8_t>> bitLayers(bitDepth, vector<uint8_t>(layerSize, 0));
     for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
         input.read(reinterpret_cast<char*>(bitLayers[bitPos].data()), layerSize);
     }
@@ -144,30 +129,28 @@ void bitStackDecode(const string& inputFile) {
 
     vector<uint8_t> reconstructedData(fileSize, 0);
 
+ 
     for (size_t i = 0; i < fileSize; i++) {
         uint8_t byte = 0;
 
         for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
-           size_t index = i / 8;  // Access bytes correctly
-            size_t bitIndex = i % 8;  // Correct bit within byte
-
+            size_t index = i / bitDepth;  
+            uint8_t bitOffset = i % 8;  
 
             if (index < bitLayers[bitPos].size()) {
-               uint8_t bitValue = (bitLayers[bitPos][index] >> bitPos) & 1;
-
-                byte |= (bitValue << bitPos);
+                uint8_t bitValue = (bitLayers[bitPos][index] >> (7 - bitOffset)) & 1;
+                byte |= (bitValue << (bitDepth - 1 - bitPos));  
             } else {
                 cerr << "Error: Index out of bounds! bitPos=" << bitPos << ", index=" << index << endl;
                 return;
             }
-
-
         }
 
         reconstructedData[i] = byte;
     }
 
-    string outputFile = filesystem::path(inputFile).stem().string(); 
+
+    string outputFile = filesystem::path(inputFile).stem().string();
     outputFile += header.extension;
 
     ofstream output(outputFile, ios::binary);
@@ -181,6 +164,8 @@ void bitStackDecode(const string& inputFile) {
 
     cout << "Decoded BSTACK file " << inputFile << " into " << outputFile << " successfully!" << endl;
 }
+
+
 
 
 
