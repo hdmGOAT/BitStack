@@ -33,7 +33,6 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
         return;
     }
 
-
     size_t fileSize = input.tellg();
     input.seekg(0, ios::beg);
     vector<uint8_t> rawData(fileSize);
@@ -66,6 +65,7 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
     for (size_t i = 0; i < fileSize; i += (bitDepth / 8)) {  
 
+        cout << "\rEncoding " << i << " of " << fileSize << " bytes (" << fixed << setprecision(2) << (100.0 * i / fileSize) << "%) " << flush;
 
         uint32_t value = 0;
 
@@ -131,6 +131,9 @@ void bitStackDecode(const string& inputFile) {
 
  
     for (size_t i = 0; i < fileSize; i++) {
+
+        cout << "\rDecoding" << i << " of " << fileSize << " bytes (" << fixed << setprecision(2) << (100.0 * i / fileSize) << "%) " << flush;
+
         uint8_t byte = 0;
 
         for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
