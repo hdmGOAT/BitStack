@@ -117,7 +117,11 @@ void bitStackDecode(const string& inputFile) {
     size_t fileSize = header.originalSize;
     int bitDepth = header.bitDepth;
 
-    size_t layerSize = (fileSize + (bitDepth - 1)) / bitDepth;
+    size_t layerSize = (fileSize + bitDepth - 1) / bitDepth;
+
+
+
+
     vector<vector<uint8_t>> bitLayers(bitDepth, vector<uint8_t>(layerSize));
 
     for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
@@ -131,11 +135,18 @@ void bitStackDecode(const string& inputFile) {
         uint8_t byte = 0;
 
         for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
-            size_t index = i / 8; 
-            size_t bitIndex = i % 8; 
+           size_t index = i / bitDepth;  // Correct bit layer indexing
+            size_t bitIndex = i % bitDepth;  // Find bit position inside a byte
 
-            uint8_t bitValue = (bitLayers[bitPos][index] >> (7 - bitIndex)) & 1;
-            byte |= (bitValue << bitPos); 
+            if (index < bitLayers[bitPos].size()) {
+                uint8_t bitValue = (bitLayers[bitPos][index] >> (7 - bitIndex)) & 1;
+                byte |= (bitValue << bitPos);
+            } else {
+                cerr << "Error: Index out of bounds! bitPos=" << bitPos << ", index=" << index << endl;
+                return;
+            }
+
+
         }
 
         reconstructedData[i] = byte;

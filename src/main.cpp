@@ -39,7 +39,6 @@ void decodeFolder(const string& folderPath) {
 }
 
 int main(int argc, char* argv[]) {
-	std::cout << "BitStack CLI Running!" << std::endl;
     if (argc < 2 || string(argv[1]) == "-?") {
         printUsage();
         return 1;
