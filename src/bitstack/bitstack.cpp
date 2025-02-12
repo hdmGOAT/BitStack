@@ -23,6 +23,10 @@ struct BStackHeader {
         ...
 
 		This allows for compressors to better view redundancy in the data.
+
+
+
+    THESE ARE WAYYYY TOO SLOW TO BE FEASIBLE
 */
 
 
