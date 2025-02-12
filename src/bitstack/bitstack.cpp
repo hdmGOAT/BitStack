@@ -129,12 +129,24 @@ void bitStackDecode(const string& inputFile) {
 
     for (size_t i = 0; i < fileSize; i++) {
         uint8_t byte = 0;
+
         for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
-            size_t index = i / 8; 
-            size_t bitIndex = i % 8; 
-            uint8_t bitValue = (bitLayers[bitPos][index] >> (7 - bitIndex)) & 1;
-            byte |= (bitValue << bitPos); 
+           size_t index = i / 8;  // Access bytes correctly
+            size_t bitIndex = i % 8;  // Correct bit within byte
+
+
+            if (index < bitLayers[bitPos].size()) {
+               uint8_t bitValue = (bitLayers[bitPos][index] >> bitPos) & 1;
+
+                byte |= (bitValue << bitPos);
+            } else {
+                cerr << "Error: Index out of bounds! bitPos=" << bitPos << ", index=" << index << endl;
+                return;
+            }
+
+
         }
+
         reconstructedData[i] = byte;
     }
 
