@@ -23,7 +23,7 @@ Before building the project, ensure you have the following installed:
 
 ### **1️⃣ Clone the Repository**
 ```sh
-git clone https://github.com/yourusername/BitStack.git
+git clone https://github.com/hdmGOAT/BitStack.git
 cd BitStack
 ```
 
@@ -94,22 +94,4 @@ git commit -m "Ignore build directory"
 git push origin main
 ```
 
----
-
-## 📜 License
-This project is licensed under the MIT License.
-
----
-
-## 🤝 Contributing
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature-xyz`).
-3. Commit your changes (`git commit -m "Added new feature"`).
-4. Push to the branch (`git push origin feature-xyz`).
-5. Open a Pull Request.
-
----
-
-## 📬 Contact
-For any questions or issues, open an issue on GitHub or reach out to [your contact info].
 
