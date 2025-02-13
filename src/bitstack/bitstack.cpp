@@ -102,12 +102,10 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
         for (int b = 0; b < bitDepth / 8; b++) {
             if (i + b < fileSize)
                 value |= rawData[i + b] << (8 * b);
-        }
 
+            for (int layer = 0; layer < bitDepth; layer++) {
 
-        for (int layer = 0; layer < bitDepth; layer++) {
-
-            size_t layerIndex = i / bitDepth; 
+            size_t layerIndex = (i / bitDepth) + b; 
             uint8_t bitValue = (value >> (7 - (layer % 8))) & 1;
 
 
@@ -118,7 +116,11 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
             bitLayers[layer][layerIndex] |= (bitValue << (7 - (i % 8)));
              
+            }
         }
+
+
+        
 
     }
 
