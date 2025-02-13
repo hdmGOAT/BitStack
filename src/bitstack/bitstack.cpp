@@ -81,10 +81,12 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
     size_t updateInterval = max(fileSize / 1000, (size_t)1);
 
-    #pragma omp parallel for
-    for (int i = 0; i < fileSize; i += (bitDepth / 8)) {  
+    int bytesPerIteration = bitDepth / 8;
 
-        processedBytes++;  
+    #pragma omp parallel for
+    for (int i = 0; i < fileSize; i += bytesPerIteration) {  
+
+        processedBytes+= bytesPerIteration;  
 
         if (processedBytes % updateInterval == 0 || processedBytes == fileSize) {
             #pragma omp critical
@@ -102,29 +104,26 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
                 value |= rawData[i + b] << (8 * b);
         }
 
-        for (int i = 0; i < fileSize; i++) {
-            uint8_t byte = rawData[i];
 
-            for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
+        for (int layer = 0; layer < bitDepth; layer++) {
 
-                size_t layerIndex = i / bitDepth; 
-                uint8_t bitValue = (byte >> (7 - (bitPos % 8))) & 1;
+            size_t layerIndex = i / bitDepth; 
+            uint8_t bitValue = (value >> (7 - (layer % 8))) & 1;
 
 
-                if (layerIndex >= bitLayers[bitPos].size()) {
-                    std::cerr << "Error: Index out of range for bitLayers[" << bitPos << "][" << layerIndex << "]\n";
+            if (layerIndex >= bitLayers[layer].size()) {
+                    std::cerr << "Error: Index out of range for bitLayers[" << layer << "][" << layerIndex << "]\n";
                     continue;
-                }
-
-                bitLayers[bitPos][layerIndex] |= (bitValue << (7 - (i % 8)));
-             
             }
+
+            bitLayers[layer][layerIndex] |= (bitValue << (7 - (i % 8)));
+             
         }
 
     }
 
-    for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
-        output.write(reinterpret_cast<char*>(bitLayers[bitPos].data()), bitLayers[bitPos].size());
+    for (int layer = 0; layer < bitDepth; layer++) {
+        output.write(reinterpret_cast<char*>(bitLayers[layer].data()), bitLayers[layer].size());
     }
 
 
@@ -151,8 +150,8 @@ void bitStackDecode(const string& inputFile) {
     size_t layerSize = (fileSize + (bitDepth - 1)) / bitDepth;
 
     vector<vector<uint8_t>> bitLayers(bitDepth, vector<uint8_t>(layerSize, 0));
-    for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
-        input.read(reinterpret_cast<char*>(bitLayers[bitPos].data()), layerSize);
+    for (int layer = 0; layer < bitDepth; layer++) {
+        input.read(reinterpret_cast<char*>(bitLayers[layer].data()), layerSize);
     }
     input.close();
 
@@ -166,15 +165,15 @@ void bitStackDecode(const string& inputFile) {
          
         uint8_t byte = 0;
 
-        for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
+        for (int layer = 0; layer < bitDepth; layer++) {
             size_t index = i / bitDepth;  
             uint8_t bitOffset = i % 8;  
 
-            if (index < bitLayers[bitPos].size()) {
-                uint8_t bitValue = (bitLayers[bitPos][index] >> (7 - bitOffset)) & 1;
-                byte |= (bitValue << (bitDepth - 1 - bitPos));  
+            if (index < bitLayers[layer].size()) {
+                uint8_t bitValue = (bitLayers[layer][index] >> (7 - bitOffset)) & 1;
+                byte |= (bitValue << (bitDepth - 1 - layer));  
             } else {
-                cerr << "Error: Index out of bounds! bitPos=" << bitPos << ", index=" << index << endl;
+                cerr << "Error: Index out of bounds! layer=" << layer << ", index=" << index << endl;
                 #pragma omp critical
                 error_flag = true;
             }
