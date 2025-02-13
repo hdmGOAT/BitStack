@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
+#include <atomic>
+
 
 using namespace std;
 
@@ -29,6 +31,16 @@ struct BStackHeader {
     THESE ARE WAYYYY TOO SLOW TO BE FEASIBLE
 */
 
+void printProgress(size_t processed, size_t totalBytes) {
+    double percentage = (double)processed / totalBytes * 100;
+
+    #pragma omp critical  // Ensure only one thread prints at a time
+    {
+        cout << "\rEncoding " << processed << " of " << totalBytes
+             << " bytes (" << fixed << setprecision(2) << percentage << "%)    "
+             << flush;
+    }
+}
 
 void bitStackEncode(const string& inputFile,  int bitDepth) {
     ifstream input(inputFile, ios::binary | ios::ate);
@@ -36,7 +48,6 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
         cerr << "Error: Cannot open input file: " << inputFile << endl;
         return;
     }
-
     size_t fileSize = input.tellg();
     input.seekg(0, ios::beg);
     vector<uint8_t> rawData(fileSize);
@@ -66,10 +77,23 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
         bitLayers[i].resize(layerSize, 0); 
     }
 
+    std::atomic<size_t> processedBytes(0);  
 
-    for (size_t i = 0; i < fileSize; i += (bitDepth / 8)) {  
+    size_t updateInterval = max(fileSize / 1000, (size_t)1);
 
-        cout << "\rEncoding " << i << " of " << fileSize << " bytes (" << fixed << setprecision(2) << (100.0 * i / fileSize) << "%) " << flush;
+    #pragma omp parallel for
+    for (int i = 0; i < fileSize; i += (bitDepth / 8)) {  
+
+        processedBytes++;  
+
+        if (processedBytes % updateInterval == 0 || processedBytes == fileSize) {
+            #pragma omp critical
+            {
+                cout << "\rEncoding " << processedBytes << " of " << fileSize
+                    << " bytes (" << fixed << setprecision(2) << (100.0 * processedBytes / fileSize) << "%)    "
+                    << flush;
+            }
+        }
 
         uint32_t value = 0;
 
@@ -78,7 +102,7 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
                 value |= rawData[i + b] << (8 * b);
         }
 
-        for (size_t i = 0; i < fileSize; i++) {
+        for (int i = 0; i < fileSize; i++) {
             uint8_t byte = rawData[i];
 
             for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
@@ -109,6 +133,7 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
 void bitStackDecode(const string& inputFile) {
     ifstream input(inputFile, ios::binary);
+    bool error_flag = false;
     if (!input) {
         cerr << "Error: Cannot open input file: " << inputFile << endl;
         return;
@@ -132,12 +157,13 @@ void bitStackDecode(const string& inputFile) {
     input.close();
 
     vector<uint8_t> reconstructedData(fileSize, 0);
+    std::atomic<size_t> processedBytes(0);  
+    size_t updateInterval = max(fileSize / 1000, (size_t)1);
 
- 
-    for (size_t i = 0; i < fileSize; i++) {
+    for (int i = 0; i < fileSize; i++) {
 
-        cout << "\rDecoding" << i << " of " << fileSize << " bytes (" << fixed << setprecision(2) << (100.0 * i / fileSize) << "%) " << flush;
-
+        cout << "\rEncoding " << processedBytes << " of " << fileSize << " bytes (" << fixed << setprecision(2) << (100.0 * processedBytes / fileSize) << "%)    " << flush;
+         
         uint8_t byte = 0;
 
         for (int bitPos = 0; bitPos < bitDepth; bitPos++) {
@@ -149,23 +175,31 @@ void bitStackDecode(const string& inputFile) {
                 byte |= (bitValue << (bitDepth - 1 - bitPos));  
             } else {
                 cerr << "Error: Index out of bounds! bitPos=" << bitPos << ", index=" << index << endl;
-                return;
+                #pragma omp critical
+                error_flag = true;
             }
         }
 
         reconstructedData[i] = byte;
     }
 
+    
 
     string outputFile = filesystem::path(inputFile).stem().string();
     outputFile += header.extension;
+
+    
 
     ofstream output(outputFile, ios::binary);
     if (!output) {
         cerr << "Error: Cannot open output file: " << outputFile << endl;
         return;
     }
-
+    
+    if (error_flag) {
+        cerr << "An error occurred. Exiting safely." << endl;
+        return;  // Exit the function early instead of printing below
+    }
     output.write(reinterpret_cast<char*>(reconstructedData.data()), fileSize);
     output.close();
 
