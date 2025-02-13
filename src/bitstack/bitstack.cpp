@@ -83,23 +83,21 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
     int bytesPerIteration = bitDepth / 8;
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < fileSize; i += bytesPerIteration) {  
 
-        // processedBytes+= bytesPerIteration;  
+        processedBytes+= bytesPerIteration;  
 
-        // if (processedBytes % updateInterval == 0 || processedBytes == fileSize) {
-        //     #pragma omp critical
-        //     {
-        //         cout << "\rEncoding " << processedBytes << " of " << fileSize
-        //             << " bytes (" << fixed << setprecision(2) << (100.0 * processedBytes / fileSize) << "%)    "
-        //             << flush;
-        //     }
-        // }
+        if (processedBytes % updateInterval == 0 || processedBytes == fileSize) {
+            #pragma omp critical
+            {
+                cout << "\rEncoding " << processedBytes << " of " << fileSize
+                    << " bytes (" << fixed << setprecision(2) << (100.0 * processedBytes / fileSize) << "%)    "
+                    << flush;
+            }
+        }
 
         uint32_t value = 0;
-
-        cout << "i: " << i << " fileSize: " << fileSize << endl;
 
         for (int b = 0; b < bitDepth / 8; b++) {
             if (i + b >= fileSize){
@@ -115,7 +113,6 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
                 int off = (i+b) % 8;
 
-                cout << "Layer: " << layer << " LayerIndex: " << layerIndex <<  endl;
                 if (layerIndex >= bitLayers[layer].size()) {
                         std::cerr << "Error: Index out of range for bitLayers[" << layer << "][" << layerIndex << "]\n";
                         continue;
@@ -163,10 +160,19 @@ void bitStackDecode(const string& inputFile) {
     vector<uint8_t> reconstructedData(fileSize, 0);
     std::atomic<size_t> processedBytes(0);  
     size_t updateInterval = max(fileSize / 1000, (size_t)1);
-
+    #pragma omp parallel for
     for (int i = 0; i < fileSize; i++) {
 
-        cout << "\rEncoding " << processedBytes << " of " << fileSize << " bytes (" << fixed << setprecision(2) << (100.0 * processedBytes / fileSize) << "%)    " << flush;
+       processedBytes++;  
+
+        if (processedBytes % updateInterval == 0 || processedBytes == fileSize) {
+            #pragma omp critical
+            {
+                cout << "\rEncoding " << processedBytes << " of " << fileSize
+                    << " bytes (" << fixed << setprecision(2) << (100.0 * processedBytes / fileSize) << "%)    "
+                    << flush;
+            }
+        }
          
         uint8_t byte = 0;
 
