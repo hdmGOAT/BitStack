@@ -160,7 +160,7 @@ void bitStackDecode(const string& inputFile) {
     vector<uint8_t> reconstructedData(fileSize, 0);
     std::atomic<size_t> processedBytes(0);  
     size_t updateInterval = max(fileSize / 1000, (size_t)1);
-    #pragma omp parallel for
+      #pragma omp parallel for
     for (int i = 0; i < fileSize; i++) {
 
        processedBytes++;  
