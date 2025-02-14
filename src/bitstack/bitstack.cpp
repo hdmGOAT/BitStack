@@ -103,13 +103,17 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
             if (i + b >= fileSize){
                 break;
             }
-                
-            value |= rawData[i + b] << (8 * b);
+            
+            
+            value |= static_cast<uint32_t>(rawData[i + b]) << (8 * b);
 
             for (int layer = 0; layer < bitDepth; layer++) {
             
                 size_t layerIndex = (i / bitDepth); 
-                uint8_t bitValue = (value >> (7 - (layer % 8))) & 1;
+                uint8_t bitValue = (value >> ((bitDepth-1) - (layer % bitDepth))) & 1;
+
+
+                cout << "Layer: " << layer << ", Index: " << layerIndex << ", Bit Value: " << (int)bitValue << endl;
 
                 int off = (i+b) % 8;
 
@@ -149,11 +153,13 @@ void bitStackDecode(const string& inputFile) {
 
     size_t fileSize = header.originalSize;
     int bitDepth = header.bitDepth;
-    size_t layerSize = (fileSize + (bitDepth - 1)) / bitDepth;
+    size_t encodedFileSize = filesystem::file_size(inputFile);
+    size_t storedLayerSize = (encodedFileSize - sizeof(BStackHeader)) / bitDepth;
 
-    vector<vector<uint8_t>> bitLayers(bitDepth, vector<uint8_t>(layerSize, 0));
+
+    vector<vector<uint8_t>> bitLayers(bitDepth, vector<uint8_t>(storedLayerSize, 0));
     for (int layer = 0; layer < bitDepth; layer++) {
-        input.read(reinterpret_cast<char*>(bitLayers[layer].data()), layerSize);
+        input.read(reinterpret_cast<char*>(bitLayers[layer].data()), storedLayerSize);
     }
     input.close();
 
@@ -178,7 +184,7 @@ void bitStackDecode(const string& inputFile) {
     //         }
     //     }
          
-        vector<uint8_t> byte(bytesPerIteration, 0);
+       uint8_t byte = 0;
 
         for (int layer = 0; layer < bitDepth; layer++) {
             size_t index = i / bitDepth;  
@@ -189,20 +195,18 @@ void bitStackDecode(const string& inputFile) {
 
                 cout << "Layer: " << layer << ", Index: " << index << ", Bit Value: " << (int)bitValue << endl;
 
-                byte[layer/8] |= (bitValue << (bitDepth - 1 - layer));  
+                byte |= (bitValue << (bitDepth - 1 - layer));  
             } else {
                 cerr << "Error: Index out of bounds! layer=" << layer << ", index=" << index << endl;
                 #pragma omp critical
                 error_flag = true;
             }
-
         }
 
-        for (int c = 0; c < bytesPerIteration; c++) {
-            if (i + c < fileSize) {
-                reconstructedData[i + c] = byte[c];
-            }
+        if (i < fileSize) {
+            reconstructedData[i] = byte;
         }
+       
     }
 
     
