@@ -83,7 +83,7 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
     int bytesPerIteration = bitDepth / 8;
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i < fileSize; i += bytesPerIteration) {  
 
         processedBytes+= bytesPerIteration;  
@@ -107,10 +107,14 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
             
             value |= static_cast<uint32_t>(rawData[i + b]) << (8 * b);
 
+            cout << "Value: " << (int)value << endl;
+        }
+
+        for (int b = 0; b < bitDepth / 8; b++) {
             for (int layer = 0; layer < bitDepth; layer++) {
             
-                size_t layerIndex = (i / bitDepth); 
-                uint8_t bitValue = (value >> ((bitDepth-1) - (layer % bitDepth))) & 1;
+                size_t layerIndex = ((i + b )/ bitDepth); 
+                uint8_t bitValue = (value >> (layer)) & 1;
 
 
                 cout << "Layer: " << layer << ", Index: " << layerIndex << ", Bit Value: " << (int)bitValue << endl;
