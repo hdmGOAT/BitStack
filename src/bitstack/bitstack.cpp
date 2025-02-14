@@ -107,7 +107,7 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
             
             value |= static_cast<uint32_t>(rawData[i + b]) << (8 * b);
 
-            //cout << "Value: " << (int)value << endl;
+            cout << "Value: " << (int)value << endl;
         }
 
             for (int layer = 0; layer < bitDepth; layer++) {
@@ -116,7 +116,7 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
                 uint8_t bitValue = (value >> (layer)) & 1;
 
 
-                //cout << "Layer: " << layer << ", Index: " << layerIndex << ", Bit Value: " << (int)bitValue << endl;
+                cout << "Layer: " << layer << ", Index: " << layerIndex << ", Bit Value: " << (int)bitValue << endl;
 
                 int off = (i+ (layer/ 8)) % 8;
 
@@ -195,7 +195,7 @@ void bitStackDecode(const string& inputFile) {
             if (index < bitLayers[layer].size()) {
                 uint8_t bitValue = (bitLayers[layer][index] >> ( 7 - bitOffset)) & 1;
 
-                //cout << "Layer: " << layer << ", Index: " << index << ", Bit Value: " << (int)bitValue << endl;
+                cout << "Layer: " << layer << ", Index: " << index << ", Bit Value: " << (int)bitValue << endl;
 
                 byte |= (bitValue << (layer));  
             } else {
