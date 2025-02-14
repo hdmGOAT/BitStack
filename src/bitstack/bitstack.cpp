@@ -160,10 +160,14 @@ void bitStackDecode(const string& inputFile) {
     vector<uint8_t> reconstructedData(fileSize, 0);
     std::atomic<size_t> processedBytes(0);  
     size_t updateInterval = max(fileSize / 1000, (size_t)1);
-      #pragma omp parallel for
-    for (int i = 0; i < fileSize; i++) {
 
-       processedBytes++;  
+    int bytesPerIteration = bitDepth / 8;
+
+    #pragma omp parallel for
+    for (int i = 0; i < fileSize; i += bytesPerIteration) {  
+
+
+       processedBytes+= bytesPerIteration;  
 
         if (processedBytes % updateInterval == 0 || processedBytes == fileSize) {
             #pragma omp critical
@@ -174,7 +178,7 @@ void bitStackDecode(const string& inputFile) {
             }
         }
          
-        uint64_t byte = 0;
+        vector<uint8_t> byte(bytesPerIteration, 0);
 
         for (int layer = 0; layer < bitDepth; layer++) {
             size_t index = i / bitDepth;  
@@ -182,15 +186,20 @@ void bitStackDecode(const string& inputFile) {
 
             if (index < bitLayers[layer].size()) {
                 uint8_t bitValue = (bitLayers[layer][index] >> (7 - bitOffset)) & 1;
-                byte |= (bitValue << (bitDepth - 1 - layer));  
+                byte[layer/8] |= (bitValue << (bitDepth - 1 - layer));  
             } else {
                 cerr << "Error: Index out of bounds! layer=" << layer << ", index=" << index << endl;
                 #pragma omp critical
                 error_flag = true;
             }
+
         }
 
-        reconstructedData[i] = byte;
+        for (int c = 0; c < bytesPerIteration; c++) {
+            if (i + c < fileSize) {
+                reconstructedData[i + c] = byte[c];
+            }
+        }
     }
 
     
