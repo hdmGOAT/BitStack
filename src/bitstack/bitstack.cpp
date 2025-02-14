@@ -107,19 +107,18 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
             
             value |= static_cast<uint32_t>(rawData[i + b]) << (8 * b);
 
-            cout << "Value: " << (int)value << endl;
+            //cout << "Value: " << (int)value << endl;
         }
 
-        for (int b = 0; b < bitDepth / 8; b++) {
             for (int layer = 0; layer < bitDepth; layer++) {
             
-                size_t layerIndex = ((i + b )/ bitDepth); 
+                size_t layerIndex = ((i + (layer / 8) )/ bitDepth); 
                 uint8_t bitValue = (value >> (layer)) & 1;
 
 
-                cout << "Layer: " << layer << ", Index: " << layerIndex << ", Bit Value: " << (int)bitValue << endl;
+                //cout << "Layer: " << layer << ", Index: " << layerIndex << ", Bit Value: " << (int)bitValue << endl;
 
-                int off = (i+b) % 8;
+                int off = (i+ (layer/ 8)) % 8;
 
                 if (layerIndex >= bitLayers[layer].size()) {
                         std::cerr << "Error: Index out of range for bitLayers[" << layer << "][" << layerIndex << "]\n";
@@ -128,8 +127,7 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
                 bitLayers[layer][layerIndex] |= (bitValue << (7 - off));
              
-            }
-        }
+         }
     }
 
     for (int layer = 0; layer < bitDepth; layer++) {
@@ -174,7 +172,7 @@ void bitStackDecode(const string& inputFile) {
     int bytesPerIteration = bitDepth / 8;
 
    // #pragma omp parallel for
-    for (int i = 0; i < fileSize; i += bytesPerIteration) {  
+    for (int i = 0; i < fileSize; i++) {  
 
 
     //    processedBytes+= bytesPerIteration;  
@@ -195,9 +193,9 @@ void bitStackDecode(const string& inputFile) {
             uint8_t bitOffset = i % 8;  
 
             if (index < bitLayers[layer].size()) {
-                uint8_t bitValue = (bitLayers[layer][index] >> (bitOffset)) & 1;
+                uint8_t bitValue = (bitLayers[layer][index] >> ( 7 - bitOffset)) & 1;
 
-                cout << "Layer: " << layer << ", Index: " << index << ", Bit Value: " << (int)bitValue << endl;
+                //cout << "Layer: " << layer << ", Index: " << index << ", Bit Value: " << (int)bitValue << endl;
 
                 byte |= (bitValue << (layer));  
             } else {
