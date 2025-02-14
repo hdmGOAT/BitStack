@@ -195,11 +195,11 @@ void bitStackDecode(const string& inputFile) {
             uint8_t bitOffset = i % 8;  
 
             if (index < bitLayers[layer].size()) {
-                uint8_t bitValue = (bitLayers[layer][index] >> (7 - bitOffset)) & 1;
+                uint8_t bitValue = (bitLayers[layer][index] >> (bitOffset)) & 1;
 
                 cout << "Layer: " << layer << ", Index: " << index << ", Bit Value: " << (int)bitValue << endl;
 
-                byte |= (bitValue << (bitDepth - 1 - layer));  
+                byte |= (bitValue << (layer));  
             } else {
                 cerr << "Error: Index out of bounds! layer=" << layer << ", index=" << index << endl;
                 #pragma omp critical
