@@ -174,7 +174,7 @@ void bitStackDecode(const string& inputFile) {
             }
         }
          
-        uint8_t byte = 0;
+        uint64_t byte = 0;
 
         for (int layer = 0; layer < bitDepth; layer++) {
             size_t index = i / bitDepth;  
