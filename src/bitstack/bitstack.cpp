@@ -172,7 +172,7 @@ void bitStackDecode(const string& inputFile) {
     int bytesPerIteration = bitDepth / 8;
 
    // #pragma omp parallel for
-    for (int i = 0; i < fileSize; i++) {  
+    for (int i = 0; i < fileSize; i+= bytesPerIteration) {  
 
 
     //    processedBytes+= bytesPerIteration;  
@@ -186,28 +186,41 @@ void bitStackDecode(const string& inputFile) {
     //         }
     //     }
          
-       uint8_t byte = 0;
+       vector<uint8_t> byte (bytesPerIteration, 0);     
+        for (int b = 0; b < bytesPerIteration; b++) {
+            if (i + b >= fileSize) {
+                break;
+            }
 
-        for (int layer = 0; layer < bitDepth; layer++) {
-            size_t index = i / bitDepth;  
-            uint8_t bitOffset = i % 8;  
+            for (int layer = 0; layer < bitDepth; layer++) {
+            size_t index = (i + b)/ bitDepth;  
+            uint8_t bitOffset = (i+b) % 8;  
 
             if (index < bitLayers[layer].size()) {
                 uint8_t bitValue = (bitLayers[layer][index] >> ( 7 - bitOffset)) & 1;
 
                 cout << "Layer: " << layer << ", Index: " << index << ", Bit Value: " << (int)bitValue << endl;
 
-                byte |= (bitValue << (layer));  
+                byte[layer / 8] |= (bitValue << (layer));  
             } else {
                 cerr << "Error: Index out of bounds! layer=" << layer << ", index=" << index << endl;
                 #pragma omp critical
                 error_flag = true;
             }
         }
-
-        if (i < fileSize) {
-            reconstructedData[i] = byte;
         }
+        
+
+        for (int c = 0; c < bytesPerIteration; c++) {
+
+            
+
+            if (i + c >= fileSize) {
+                break;
+            }
+            reconstructedData[i + c] = byte[c];
+        }
+        
        
     }
 
