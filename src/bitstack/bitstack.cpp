@@ -169,6 +169,8 @@ void bitStackDecode(const string& inputFile) {
     std::atomic<size_t> processedBytes(0);  
     size_t updateInterval = max(fileSize / 1000, (size_t)1);
 
+    
+
     int bytesPerIteration = bitDepth / 8;
 
    // #pragma omp parallel for
@@ -192,28 +194,30 @@ void bitStackDecode(const string& inputFile) {
                 break;
             }
 
-            for (int layer = 0; layer < bitDepth; layer++) {
-            size_t index = (i + b)/ bitDepth;  
-            uint8_t bitOffset = (i+b) % 8;  
+            for (int layer = 8 * b; layer < (8 + 8*b); layer++) {
+                size_t index = (i + b)/ bitDepth;  
+                uint8_t bitOffset = (i+b) % 8;  
 
-            if (index < bitLayers[layer].size()) {
-                uint8_t bitValue = (bitLayers[layer][index] >> ( 7 - bitOffset)) & 1;
+                if (index < bitLayers[layer].size()) {
+                    uint8_t bitValue = (bitLayers[layer][index] >> ( 7 - bitOffset)) & 1;
 
-                cout << "Layer: " << layer << ", Index: " << index << ", Bit Value: " << (int)bitValue << endl;
+                    cout << "Layer: " << layer << ", Index: " << index << ", Bit Value: " << (int)bitValue << endl;
 
-                byte[layer / 8] |= (bitValue << (layer));  
-            } else {
-                cerr << "Error: Index out of bounds! layer=" << layer << ", index=" << index << endl;
-                #pragma omp critical
-                error_flag = true;
+                    byte[layer / 8] |= (bitValue << (layer % 8)); 
+                    
+                } else {
+                    cerr << "Error: Index out of bounds! layer=" << layer << ", index=" << index << endl;
+                    #pragma omp critical
+                    error_flag = true;
+                }
             }
-        }
+            
+            cout << "Byte: " << (int)byte[b] << endl;
         }
         
 
         for (int c = 0; c < bytesPerIteration; c++) {
 
-            
 
             if (i + c >= fileSize) {
                 break;
