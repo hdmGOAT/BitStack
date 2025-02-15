@@ -88,14 +88,14 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
         processedBytes+= bytesPerIteration;  
 
-        if (processedBytes % updateInterval == 0 || processedBytes == fileSize) {
-            #pragma omp critical
-            {
-                cout << "\rEncoding " << processedBytes << " of " << fileSize
-                    << " bytes (" << fixed << setprecision(2) << (100.0 * processedBytes / fileSize) << "%)    "
-                    << flush;
-            }
-        }
+        // if (processedBytes % updateInterval == 0 || processedBytes == fileSize) {
+        //     #pragma omp critical
+        //     {
+        //         cout << "\rEncoding " << processedBytes << " of " << fileSize
+        //             << " bytes (" << fixed << setprecision(2) << (100.0 * processedBytes / fileSize) << "%)    "
+        //             << flush;
+        //     }
+        // }
 
         uint32_t value = 0;
 
@@ -110,24 +110,25 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
             cout << "Value: " << (int)value << endl;
         }
 
-            for (int layer = 0; layer < bitDepth; layer++) {
+        for (int layer = 0; layer < bitDepth; layer++) {
             
-                size_t layerIndex = ((i + (layer / 8) )/ bitDepth); 
-                uint8_t bitValue = (value >> (layer)) & 1;
+            size_t layerIndex = ((i + (layer / 8) )/ bitDepth); //might be issue
+            uint8_t bitValue = (value >> (layer)) & 1;
+            cout << "Layer: " << layer << ", Index: " << layerIndex << ", Bit Value: " << (int)bitValue << endl;
+            // until this part is good ^
 
+            int off = (i + (layer / 8)) % 8;
 
-                cout << "Layer: " << layer << ", Index: " << layerIndex << ", Bit Value: " << (int)bitValue << endl;
+            if (layerIndex >= bitLayers[layer].size()) {
+                std::cerr << "Error: Index out of range for bitLayers[" << layer << "][" << layerIndex << "]\n";
+                continue;
+            }
 
-                int off = (i+ (layer/ 8)) % 8;
+            bitLayers[layer][layerIndex] |= (bitValue << (7 - off));
 
-                if (layerIndex >= bitLayers[layer].size()) {
-                        std::cerr << "Error: Index out of range for bitLayers[" << layer << "][" << layerIndex << "]\n";
-                        continue;
-                }
-
-                bitLayers[layer][layerIndex] |= (bitValue << (7 - off));
+            cout << "BitLayers[" << layer << "][" << layerIndex << "] = " << (int)bitLayers[layer][layerIndex] << endl;
              
-         }
+        }
     }
 
     for (int layer = 0; layer < bitDepth; layer++) {
