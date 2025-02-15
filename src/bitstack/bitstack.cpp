@@ -99,6 +99,8 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
 
         uint32_t value = 0;
 
+        cout << "---------- I = " << i <<" ----------" << endl;
+
         for (int b = 0; b < bitDepth / 8; b++) {
             if (i + b >= fileSize){
                 break;
@@ -107,17 +109,19 @@ void bitStackEncode(const string& inputFile,  int bitDepth) {
             
             value |= static_cast<uint32_t>(rawData[i + b]) << (8 * b);
 
-            cout << "Value: " << (int)value << endl;
+            //cout << "Value: " << (int)value << endl;
         }
 
         for (int layer = 0; layer < bitDepth; layer++) {
-            
+
             size_t layerIndex = ((i + (layer / 8) )/ bitDepth); //might be issue
             uint8_t bitValue = (value >> (layer)) & 1;
-            cout << "Layer: " << layer << ", Index: " << layerIndex << ", Bit Value: " << (int)bitValue << endl;
+            
             // until this part is good ^
 
-            int off = (i + (layer / 8)) % 8;
+            int off = (i + (layer / 8)) / bytesPerIteration;
+
+            cout << "Layer: " << layer << ", Index: " << layerIndex << ", Bit: "<< off << ", Bit Value: " << (int)bitValue << endl;
 
             if (layerIndex >= bitLayers[layer].size()) {
                 std::cerr << "Error: Index out of range for bitLayers[" << layer << "][" << layerIndex << "]\n";
