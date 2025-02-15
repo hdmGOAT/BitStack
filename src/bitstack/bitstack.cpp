@@ -158,11 +158,27 @@ void bitStackDecode(const string& inputFile) {
     size_t encodedFileSize = filesystem::file_size(inputFile);
     size_t storedLayerSize = (encodedFileSize - sizeof(BStackHeader)) / bitDepth;
 
+    size_t expectedLayerSize = (fileSize + (bitDepth - 1)) / bitDepth;
 
     vector<vector<uint8_t>> bitLayers(bitDepth, vector<uint8_t>(storedLayerSize, 0));
     for (int layer = 0; layer < bitDepth; layer++) {
-        input.read(reinterpret_cast<char*>(bitLayers[layer].data()), storedLayerSize);
+    size_t bytesRead = 0;
+
+        while (bytesRead < storedLayerSize) {
+            input.read(reinterpret_cast<char*>(&bitLayers[layer][bytesRead]), storedLayerSize - bytesRead);
+            size_t justRead = input.gcount();
+
+            if (justRead == 0) {
+                cerr << "Error: Unexpected end of file while reading layer " << layer << endl;
+                return;
+            }
+
+            bytesRead += justRead;
+        }
+
+        cout << "Layer " << layer << " fully read: " << bytesRead << " bytes." << endl;
     }
+
     input.close();
 
     vector<uint8_t> reconstructedData(fileSize, 0);
@@ -196,10 +212,10 @@ void bitStackDecode(const string& inputFile) {
 
             for (int layer = 8 * b; layer < (8 + 8*b); layer++) {
                 size_t index = (i + b)/ bitDepth;  
-                uint8_t bitOffset = (i+b) % 8;  
 
                 if (index < bitLayers[layer].size()) {
-                    uint8_t bitValue = (bitLayers[layer][index] >> ( 7 - bitOffset)) & 1;
+                    uint8_t bitValue = (bitLayers[layer][index] >> (7 - ((i + b) % 8))) & 1;
+
 
                     cout << "Layer: " << layer << ", Index: " << index << ", Bit Value: " << (int)bitValue << endl;
 
