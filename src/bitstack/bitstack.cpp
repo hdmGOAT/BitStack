@@ -25,10 +25,6 @@ struct BStackHeader {
         ...
 
 		This allows for compressors to better view redundancy in the data.
-
-
-
-    THESE ARE WAYYYY TOO SLOW TO BE FEASIBLE
 */
 
 void printProgress(size_t processed, size_t totalBytes) {
